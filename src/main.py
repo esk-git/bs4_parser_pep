@@ -1,13 +1,16 @@
-import requests_cache
-import re
 import logging
+import re
+from collections import defaultdict
+from urllib.parse import urljoin
+
+import requests_cache
 from bs4 import BeautifulSoup
 from tqdm import tqdm
-from urllib.parse import urljoin
-from constants import BASE_DIR, MAIN_DOC_URL, MAIN_PEP_URL, EXPECTED_STATUS
+
 from configs import configure_argument_parser, configure_logging
+from constants import BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, MAIN_PEP_URL
 from outputs import control_output
-from utils import get_response, find_tag
+from utils import find_tag, get_response
 
 
 def whats_new(session):
@@ -106,7 +109,7 @@ def pep(session):
     table = find_tag(section, 'table', attrs={'class': 'pep-zero-table'})
     tbody = find_tag(table, 'tbody')
     tr = tbody.find_all('tr')
-    status_sum = {}
+    status_sum = defaultdict(int)
     total_peps: int = 0
     results = [('Статус', 'Количество')]
     for item in tqdm(tr):
@@ -132,7 +135,7 @@ def pep(session):
             status_sum[status_on_page] += 1
         if status_on_page not in status_sum:
             status_sum[status_on_page] = 1
-        total_peps += 1
+        total_peps = sum(status_sum.values())
     for status in status_sum:
         results.append((status, status_sum[status]))
     results.append(('Total', total_peps))
